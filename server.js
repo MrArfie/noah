@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config(); // Load environment variables from .env file
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -9,70 +9,70 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ✅ Check MONGO_URI
+// ✅ Ensure MONGO_URI is available in .env file
 if (!process.env.MONGO_URI) {
   console.error('❌ MONGO_URI is missing in .env file');
-  process.exit(1);
+  process.exit(1); // Exit if MONGO_URI is missing
 }
 
-// ✅ Middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(cors());
-app.use(helmet());
-app.use(morgan('dev'));
+// ✅ Middleware Setup
+app.use(express.json({ limit: '10mb' })); // Set limit for incoming JSON payloads
+app.use(express.urlencoded({ extended: true, limit: '10mb' })); // Set limit for URL-encoded data
+app.use(cors()); // Enable Cross-Origin Resource Sharing
+app.use(helmet()); // Helps secure the app by setting various HTTP headers
+app.use(morgan('dev')); // HTTP request logger (logs in 'dev' format)
 
 // ✅ Rate Limiting
 app.use(
   rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Allow 100 requests per windowMs
     message: '⚠️ Too many requests, please try again later.',
   })
 );
 
 // ✅ MongoDB Connection
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('✅ Connected to MongoDB Atlas'))
   .catch((err) => {
     console.error('❌ MongoDB Connection Error:', err.message);
-    process.exit(1);
+    process.exit(1); // Exit if MongoDB connection fails
   });
 
-// ✅ Route Imports
+// ✅ Import Routes
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const petRoutes = require('./routes/petRoutes');
 const userRoutes = require('./routes/users');
-const volunteerRoutes = require('./routes/volunteers'); // 👥 Volunteer form
-const donationRoutes = require('./routes/donations');   // 💸 Donations
+const volunteerRoutes = require('./routes/volunteers');
+const donationRoutes = require('./routes/donations');
 
-// ✅ Apply Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/pets', petRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/volunteers', volunteerRoutes);
-app.use('/api/donations', donationRoutes);
+// ✅ Use Routes
+app.use('/api/auth', authRoutes); // Authentication-related routes (login, register)
+app.use('/api/admin', adminRoutes); // Admin routes (manage users, pets, etc.)
+app.use('/api/pets', petRoutes); // Pet-related routes (view, add, update pets)
+app.use('/api/users', userRoutes); // User-related routes (user data, management)
+app.use('/api/volunteers', volunteerRoutes); // Volunteer-related routes (volunteer form)
+app.use('/api/donations', donationRoutes); // Donation-related routes (making donations)
 
-// ✅ Default Route
+// ✅ Default Route (Optional: for testing if server is running)
 app.get('/', (req, res) => {
   res.send('🚀 Welcome to the Noah’s Ark Shelter API!');
 });
 
-// ✅ 404 Fallback
+// ✅ Fallback for 404 errors (unknown routes)
 app.use('*', (req, res) => {
   res.status(404).json({ msg: '❌ Route not found' });
 });
 
-// ✅ Global Error Handler
+// ✅ Global Error Handler (for any unhandled errors)
 app.use((err, req, res, next) => {
-  console.error('🔥 Server Error:', err.stack);
-  res.status(500).json({ msg: 'Internal Server Error' });
+  console.error('🔥 Server Error:', err.stack); // Log error stack trace
+  res.status(500).json({ msg: 'Internal Server Error' }); // Return 500 for internal errors
 });
 
-// ✅ Start Server
+// ✅ Start the server and listen on the specified port
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
